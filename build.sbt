@@ -6,14 +6,17 @@ scalacOptions ++= Seq(
   "-language:existentials",
   "-language:higherKinds",
   "-language:implicitConversions",
+  "-language:postfixOps",
   "-unchecked",
   "-Yno-adapted-args",
-  "-Ywarn-dead-code",
+  "-Ypartial-unification",
   "-Ywarn-value-discard"
 )
 
 libraryDependencies ++= Seq(
-  "com.chuusai" %% "shapeless" % "2.3.3"
+  "org.typelevel" %% "kittens" % "1.2.0",
+  "org.tpolecat" %% "atto-core" % "0.6.3",
+  "org.typelevel" %% "cats-effect" % "1.0.0"
 )
 
 enablePlugins(TutPlugin)
