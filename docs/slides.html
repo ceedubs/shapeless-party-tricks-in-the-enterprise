@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<!-- vim: set ft=markdown: -->
+<html>
+  <head>
+    <title>Shapeless party tricks in the enterprise</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body {
+        font-family: 'Droid Serif', 'Helvetica';
+      }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz', 'Gill Sans';
+        font-weight: normal;
+      }
+      .grouping { background-color: beige }
+      .remark-slide-content {
+        font-size: 20px;
+      }
+      .remark-code, .remark-inline-code {
+        font-family: 'Ubuntu Mono', 'Consolas', 'Courier New';
+        font-size: 20px;
+      }
+      span.footer {
+          position: absolute;
+          bottom: 10px;
+          left: 0px;
+          height: 20px;
+          width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+layout: true
+background-image: url(shapeless-logo-alpha.png)
+
+---
+
+class: center, middle
+
+# Shapeless party tricks in the enterprise
+Cody Allen
+
+.footer[[Shapeless logo](https://twitter.com/milessabin/status/733992141245042689) by [killnicole](https://twitter.com/killnicole) used with [permission](https://gitter.im/milessabin/shapeless?at=5bdafbe9076992347a9bc11b) / faded from original]
+---
+
+name: agenda
+
+# the agenda
+
+1. _Brief_ intro to Shapeless
+2. Dive into examples
+  - list combinations
+  - repeating-effects
+  - values of enum-like ADT
+
+_Not_ an in-depth explanation of Shapeless. See [resources](#resources).
+
+???
+
+Poll the audience on whether they are familiar with Shapeless.
+
+There have been a number of great in-depth explanations of Shapeless. Today I am going to take a different approach and show a few cool things that it can do, and maybe it will pique your curiosity or prompt you to consider Shapeless for uses that you wouldn't have.
+
+---
+
+# about me
+
+<img style="float: right" alt="our cat, Kito, helps me with a pull request review" src="./kito-helps-with-pr-review.jpg" />
+
+Cody Allen
+
+- scala developer ~6 years
+- OSS contributor (mostly with [Cats](https://typelevel.org/cats/))
+- pair programmer (mostly with cats)
+- machine learning and NLP at Salesforce
+- I didn't understand Shapeless the first time that I looked at it.
+
+---
+
+# Shapeless
+
+From the README:
+
+> shapeless is a type class and dependent type based generic programming library for Scala.
+
+--
+
+<br />
+
+A little abstract? That's okay we'll look at some examples.
+
+???
+
+Shapeless is pretty abstract. It's not like an HTTP library that has a specific use-case. Part of the reason that I didn't understand Shapeless when I first looked at it is because I didn't have a use-case. Once I had a problem that was solved well with Shapeless, things started to click.
+
+---
+
+# shapeless
+
+Libraries using Shapeless:
+
+- [doobie](https://github.com/tpolecat/doobie) - JDBC
+- [scodec](https://github.com/scodec/scodec) - binary data
+- [circe](https://github.com/circe/circe) - JSON
+- [Frameless](https://github.com/typelevel/frameless) - Spark
+- [refined](https://github.com/fthomas/refined) - refined types
+- [PureConfig](https://github.com/pureconfig/pureconfig) - reading config
+- ... and many more
+
+???
+
+These libraries use Shapeless for its powerful abstractions to work with types that are known by the library author at compile time (but not to Shapeless).
+
+When people tell me that they haven't been able to wrap their head around Shapeless, I often say something like "it tends to be more useful for library developers than application developers." While I think that this is generally true, in this presentation I want to talk about some one-off use cases where I reached for it.
+
+---
+
+# pairs of list elements
+
+```scala
+val names = List("a", "b", "c", "d")
+```
+
+--
+
+```scala
+def pairs[A](l: List[A]): List[(A, A)] = for {
+  (a1, id1) <- l.zipWithIndex
+  (a2, id2) <- l.zipWithIndex
+  if id1 < id2
+} yield (a1, a2)
+```
+
+```scala
+pairs(names)
+// res0: List[(String, String)] = List((a,b), (a,c), (a,d), (b,c), (b,d), (c,d))
+```
+
+.footer.center[`pairs` based on [this stack overflow response](https://stackoverflow.com/a/45725255)]
+
+???
+
+Checking agreement rates among groups of data labelers.
+
+Step 1: enumerate groups that we want to check.
+
+---
+
+# standard library combinations
+
+```scala
+names.combinations(2).toList
+// res1: List[List[String]] = List(List(a, b), List(a, c), List(a, d), List(b, c), List(b, d), List(c, d))
+
+names.combinations(3).toList
+// res2: List[List[String]] = List(List(a, b, c), List(a, b, d), List(a, c, d), List(b, c, d))
+```
+
+Works with an arbitrary value of `n` instead of just `2`.
+
+--
+
+But, it gives us a `List` of `List`s, throwing away information about what `n` was.
+
+---
+
+# literal values
+
+The scala compiler has unique types for literal values.
+
+```scala
+// int return type for runtime value
+final val cores = Runtime.getRuntime.availableProcessors()
+// cores: Int = 8
+
+// literal Int(3) return type for literal value
+final val three = 3
+// three: Int(3) = 3
+```
+
+--
+
+Shapeless provides support for using these literal value types.
+
+---
+
+# shapeless-powered combinations implementation
+
+```scala
+import shapeless.Nat
+import shapeless.ops.nat._
+import shapeless.ops.traversable.ToSizedHList
+import scala.collection._
+
+def combos[F[T] <: GenTraversable[T], A, N <: Nat, Out](n: Nat, l: F[A])(implicit
+  toInt: ToInt[n.N], ev0: F[A] <:< SeqLike[A, F[A]],
+  toHList: ToSizedHList.Aux[F, A, n.N, Option[Out]]
+): Iterator[Out] =
+  l.combinations(toInt()).map(toHList(_).getOrElse(sys.error("This shouldn't happen...")))
+```
+
+Note: this definition will be [slightly cleaner](https://github.com/milessabin/shapeless/pull/816) after the next Shapeless release.
+
+???
+
+The actual definition isn't that important. The main thing to note is that other than wrangling some implicits, the actual implementation is a single line.
+
+---
+
+# shapeless-powered combinations usage
+
+```scala
+combos(2, names).toList.map(_.tupled)
+// res5: List[(String, String)] = List((a,b), (a,c), (a,d), (b,c), (b,d), (c,d))
+
+combos(3, names).toList.map(_.tupled)
+// res6: List[(String, String, String)] = List((a,b,c), (a,b,d), (a,c,d), (b,c,d))
+
+combos(4, names).toList.map(_.tupled)
+// res7: List[(String, String, String, String)] = List((a,b,c,d))
+```
+
+---
+
+# awaiting messages
+
+This came up while working on a websocket-based protocol.
+
+```scala
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.ExecutionContext
+import cats.effect.IO
+import cats.implicits._
+
+implicit val timer = IO.timer(ExecutionContext.global)
+
+// mock implementation of awaiting a message
+val awaitMsg: IO[String] =
+  IO.sleep(1 millis) *> IO{System.currentTimeMillis().toString}
+```
+
+```scala
+awaitMsg.unsafeRunSync
+// res9: String = 1541194238020
+```
+
+---
+
+# multiple messages in the protocol
+
+This protocol requires that we await 2 messages...
+
+```scala
+val await2 = for {
+  msg1 <- awaitMsg
+  msg2 <- awaitMsg
+} yield (msg1, msg2)
+// await2: cats.effect.IO[(String, String)] = IO$1214122573
+
+await2.unsafeRunSync
+// res10: (String, String) = (1541194238239,1541194238241)
+```
+
+--
+
+```scala
+val await2 = awaitMsg.product(awaitMsg)
+// await2: cats.effect.IO[(String, String)] = IO$2063309955
+```
+
+---
+
+# 3 messages in the protocol
+
+Oh now 3...
+
+```scala
+val await3 = for {
+  msg1 <- awaitMsg
+  msg2 <- awaitMsg
+  msg3 <- awaitMsg
+} yield (msg1, msg2, msg3)
+// await3: cats.effect.IO[(String, String, String)] = IO$1081896693
+
+await3.unsafeRunSync
+// res11: (String, String, String) = (1541194238580,1541194238582,1541194238584)
+```
+
+---
+
+# alternative syntax for awaiting 3 messages
+
+```scala
+val await3 = awaitMsg product awaitMsg product awaitMsg
+// await3: cats.effect.IO[((String, String), String)] = IO$1989192261
+
+await3.unsafeRunSync
+// res12: ((String, String), String) = ((1541194238799,1541194238800),1541194238801)
+```
+
+--
+
+```scala
+val await3 = (awaitMsg, awaitMsg, awaitMsg).tupled
+// await3: cats.effect.IO[(String, String, String)] = <function1>
+
+await3.unsafeRunSync
+// res13: (String, String, String) = (1541194239015,1541194239017,1541194239018)
+```
+
+--
+
+Can we do better?
+
+???
+
+If we continue the pattern of using `product`, it gets pretty verbose and we get this awkward nested tuple as a return type.
+
+It's not too bad if we use Cat's `.tupled` syntax. But we still have to type `awaitMsg` 3 times. Is there a better way?
+
+---
+
+# replicateA
+
+`replicateA`: apply an effect `n` times and collect the results in a `List`.
+
+Available for all types that form an [applicative functor](https://typelevel.org/cats/typeclasses/applicative.html)
+
+```scala
+val await2 = awaitMsg.replicateA(2)
+// await2: cats.effect.IO[List[String]] = <function1>
+
+await2.unsafeRunSync
+// res14: List[String] = List(1541194239248, 1541194239249)
+
+val await3 = awaitMsg.replicateA(3)
+// await3: cats.effect.IO[List[String]] = <function1>
+
+await3.unsafeRunSync
+// res15: List[String] = List(1541194239464, 1541194239465, 1541194239466)
+```
+
+???
+
+This is nice. It will generalize to an arbitrary `n` value, and it works for lots of types; not just `IO`.
+
+But we are getting back a `List` instead of an appropriately-sized tuple. This is feeling familiar to combinations....
+
+---
+
+# replicateH
+
+[replicateH](https://github.com/typelevel/kittens/blob/master/core/src/main/scala/cats/replicateH/replicateH.scala) from [kittens][kittens]
+
+```scala
+import cats.replicateH._
+```
+
+```scala
+val await2 = awaitMsg.replicateH(2).map(_.tupled)
+// await2: cats.effect.IO[(String, String)] = <function1>
+
+await2.unsafeRunSync
+// res16: (String, String) = (1541194239823,1541194239824)
+
+val await3 = awaitMsg.replicateH(3).map(_.tupled)
+// await3: cats.effect.IO[(String, String, String)] = <function1>
+
+await3.unsafeRunSync
+// res17: (String, String, String) = (1541194240095,1541194240096,1541194240098)
+```
+
+---
+
+# replicateA on List
+
+```scala
+val replicated2 = List(1, 2).replicateH(2).map(_.tupled)
+// replicated2: List[(Int, Int)] = List((1,1), (1,2), (2,1), (2,2))
+
+val replicated3 = List(1, 2).replicateH(3).map(_.tupled)
+// replicated3: List[(Int, Int, Int)] = List((1,1,1), (1,1,2), (1,2,1), (1,2,2), (2,1,1), (2,1,2), (2,2,1), (2,2,2))
+
+replicated3.mkString("\n")
+// res18: String =
+// (1,1,1)
+// (1,1,2)
+// (1,2,1)
+// (1,2,2)
+// (2,1,1)
+// (2,1,2)
+// (2,2,1)
+// (2,2,2)
+```
+
+--
+
+Similar to `combos` but pairs an element with itself too
+
+---
+
+# getAndIncrement with State
+
+```scala
+import cats.data.State
+
+val getAndIncrement: State[Int, Int] = State(acc => (acc + 1, acc))
+```
+
+```scala
+getAndIncrement.run(0).value
+// res19: (Int, Int) = (1,0)
+```
+
+---
+
+# replicateH with State
+
+```scala
+val getAndIncrement2: State[Int, (Int, Int)] =
+  getAndIncrement.replicateH(2).map(_.tupled)
+
+val getAndIncrement3: State[Int, (Int, Int, Int)] =
+  getAndIncrement.replicateH(3).map(_.tupled)
+
+val getAndIncrement4: State[Int, (Int, Int, Int, Int)] =
+  getAndIncrement.replicateH(4).map(_.tupled)
+```
+
+```scala
+getAndIncrement2.run(0).value
+// res20: (Int, (Int, Int)) = (2,(0,1))
+
+getAndIncrement3.run(0).value
+// res21: (Int, (Int, Int, Int)) = (3,(0,1,2))
+
+getAndIncrement4.run(0).value
+// res22: (Int, (Int, Int, Int, Int)) = (4,(0,1,2,3))
+```
+
+---
+
+# parsing 3 letters in a row
+
+Using the [atto](https://github.com/tpolecat/atto) parsing library
+
+```scala
+import atto._, Atto._
+```
+
+```scala
+val pMany = letter.manyN(3)
+// pMany: atto.Parser[List[Char]] = ManyN(3, letter)
+
+pMany.parseOnly("abc")
+// res23: atto.ParseResult[List[Char]] = Done(,List(a, b, c))
+```
+
+--
+
+```scala
+val pSquiggly = letter ~ letter ~ letter
+// pSquiggly: atto.Parser[((Char, Char), Char)] = ((letter) ~ letter) ~ letter
+
+pSquiggly.parseOnly("abc")
+// res24: atto.ParseResult[((Char, Char), Char)] = Done(,((a,b),c))
+```
+
+---
+
+# replicateA on a parser
+
+```scala
+val pReplicate = letter.replicateH(3).map(_.tupled)
+// pReplicate: atto.Parser[(Char, Char, Char)] = (((letter) flatMap ...) map ...) map ...
+
+pReplicate.parseOnly("abc")
+// res25: atto.ParseResult[(Char, Char, Char)] = Done(,(a,b,c))
+```
+
+---
+
+# take-away lessons
+
+When compile-time type information is being thrown away, ask yourself whether it has to be.
+
+--
+
+Shapeless can often help preserve compile-time type information and type-safety.
+
+--
+
+The types and implicits might become noisy, but the implementations are often trivial.
+
+---
+
+class: center, middle
+
+# Thanks!
+
+Special thanks to:
+
+Miles Sabin (@milessabin) for creating Shapeless.
+
+Travis Brown (@travisbrown) for giving great answers to lots of Shapeless questions on Stack Overflow.
+
+Rob Norris (@tpolecat) for creating [tut](https://github.com/tpolecat/tut) and giving me permission to copy/paste his slide setup from [Fun and Games with Fix, Cofree, and Doobie](https://github.com/tpolecat/cofree).
+
+---
+
+# resources
+
+- [this presentation](https://github.com/ceedubs/shapeless-party-tricks-in-the-enterprise)
+- [shapeless](https://github.com/milessabin/shapeless)
+- [The Type Astronaut's Guide to Shapeless Book](https://underscore.io/books/shapeless-guide/)
+- [kittens][kittens] - Automatic type class derivation for Cats
+- [Scala enumerations][underscore-scala-enumerations-blog-post] post on Underscore blog
+- [tut](https://github.com/tpolecat/tut) - run Scala code in your markdown (used to create these slides)
+
+[kittens]: https://github.com/typelevel/kittens
+[underscore-scala-enumerations-blog-post]: https://underscore.io/blog/posts/2014/09/03/enumerations.html
+
+---
+
+# questions?
+
+---
+
+# bonus slides
+
+The following slides were cut for the sake of time, but might be useful for questions or the unlikely event of leftover time.
+
+---
+
+# enums
+```scala
+object EnumExample {
+  object Comparison extends Enumeration {
+    val GreaterThan, LessThan, EqualTo = Value
+  }
+
+  def toInt(c: Comparison.Value): Int = c match {
+    case Comparison.GreaterThan => 1
+    case Comparison.LessThan => -1
+  }
+}
+```
+
+--
+
+```scala
+EnumExample.Comparison.values
+// res26: EnumExample.Comparison.ValueSet = Comparison.ValueSet(GreaterThan, LessThan, EqualTo)
+
+EnumExample.Comparison.withName("GreaterThan")
+// res27: EnumExample.Comparison.Value = GreaterThan
+```
+
+---
+
+# enums
+
+```scala
+{
+ import EnumExample._, Comparison._
+
+ toInt(EqualTo)
+}
+// scala.MatchError: EqualTo (of class scala.Enumeration$Val)
+//   at EnumExample$.toInt(<console>:42)
+//   ... 43 elided
+```
+
+`Enumeration` has its [problems][underscore-scala-enumerations-blog-post].
+
+---
+# ADT approach to enums
+
+Cats uses an ADT for [Comparison](https://github.com/typelevel/cats/blob/v1.4.0/kernel/src/main/scala/cats/kernel/Comparison.scala#L3-L9).
+
+---
+
+# enums
+
+Shapeless-powered support getting the values of an ADT "enum":
+
+```scala
+object derivation {
+  import shapeless.{Coproduct, Generic}
+  import shapeless.ops.coproduct.Reify
+
+  trait CaseObjects[A] {
+    type Values
+    def hlist: Values
+  }
+
+  object CaseObjects {
+    type Aux[A, V] = CaseObjects[A] { type Values = V }
+
+    def apply[A](implicit ev: CaseObjects[A]): Aux[A, ev.Values] =
+      ev
+
+    implicit def mkCaseObjects[A, C <: Coproduct](
+        implicit gen: Generic.Aux[A, C], reify: Reify[C]): Aux[A, reify.Out] =
+      new CaseObjects[A] {
+        type Values = reify.Out
+        def hlist: Values = reify()
+      }
+  }
+}
+```
+
+---
+
+# ADT enums
+
+Let's try this out with [Comparison](https://github.com/typelevel/cats/blob/v1.4.0/kernel/src/main/scala/cats/kernel/Comparison.scala#L3-L9) from Cats.
+
+```scala
+import derivation.CaseObjects
+import cats.kernel.Comparison
+```
+
+```scala
+val comparisons = CaseObjects[Comparison].hlist
+// comparisons: cats.kernel.Comparison.EqualTo.type :: cats.kernel.Comparison.GreaterThan.type :: cats.kernel.Comparison.LessThan.type :: shapeless.HNil = EqualTo :: GreaterThan :: LessThan :: HNil
+
+comparisons.toList
+// res29: List[cats.kernel.Comparison] = List(EqualTo, GreaterThan, LessThan)
+
+val strToComparison: Map[String, Comparison] =
+  comparisons.toList.map(c => c.toString -> c).toMap
+// strToComparison: scala.collection.Map[String,cats.kernel.Comparison] = Map(EqualTo -> EqualTo, GreaterThan -> GreaterThan, LessThan -> LessThan)
+```
+
+---
+
+# tuples
+
+```scala
+val t3 = (3, true, "foo")
+// t3: (Int, Boolean, String) = (3,true,foo)
+```
+
+--
+Now let's prepend a `Double`:
+
+```scala
+def prependT3[A, B, C, D](head: A, tail: (B, C, D)): (A, B, C, D) = ???
+```
+
+--
+
+```scala
+def prependT3[A, B, C, D](head: A, tail: (B, C, D)): (A, B, C, D) = (head, tail._1, tail._2, tail._3)
+```
+
+```scala
+val t4: (Double, Int, Boolean, String) = prependT3(3.14, t3)
+// t4: (Double, Int, Boolean, String) = (3.14,3,true,foo)
+```
+
+---
+
+# tuple summary
+
+- known static size at compile time
+- heterogeneous entry types (statically known at compile time)
+- awkward to compose
+  - `Tuple3` and `Tuple4` are completely different types with no connection
+  - lacking abstraction over arity
+
+---
+
+# List
+
+```scala
+val l = List(1, 2, 3)
+// l: List[Int] = List(1, 2, 3)
+
+val l2 = 0 :: l
+// l2: List[Int] = List(0, 1, 2, 3)
+```
+
+Prepending is easy!
+
+--
+
+What about heterogeneous lists?
+
+```scala
+val hl = 3 :: true :: "foo" :: Nil
+// hl: List[Any] = List(3, true, foo)
+
+val hl2 = 3.14 :: hl
+// hl2: List[Any] = List(3.14, 3, true, foo)
+```
+
+---
+
+# List summary
+
+- dynamic size (unknown at compile time)
+- homogeneous static entry type
+  - You can shove different object types into a `List[Any]`, but you throw away type information
+- easily compose (via prepend, etc)
+- abstract over arity
+
+---
+
+# another look at List
+
+```scala
+object ListDef {
+  sealed abstract class List[+A]
+  case object Nil extends List[Nothing]
+  final case class ::[A](head: A, tail: List[A]) extends List[A]
+}
+```
+
+--
+
+`tail: List[A]` forces homogeneity. What if we use another type parameter to `::`?
+
+---
+
+# HList
+
+```scala
+object HListDef {
+  sealed abstract class HList
+  case object Nil extends HList
+  final case class ::[A, T](head: A, tail: T) extends HList
+}
+```
+
+???
+
+This is roughly the definition of `HList`. The actual implementation is slightly different to make this easier to work with.
+
+---
+
+# HList
+
+```scala
+import shapeless.HNil
+```
+
+```scala
+val h = 3 :: true :: "foo" :: HNil
+// h: Int :: Boolean :: String :: shapeless.HNil = 3 :: true :: foo :: HNil
+
+h.reverse
+// res30: String :: Boolean :: Int :: shapeless.HNil = foo :: true :: 3 :: HNil
+
+h(2)
+// res31: String = foo
+```
+
+--
+```scala
+h(3)
+// <console>:43: error: Implicit not found: shapeless.Ops.At[Int :: Boolean :: String :: shapeless.HNil, shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]. You requested to access an element at the position shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]], but the HList Int :: Boolean :: String :: shapeless.HNil is too short.
+//        h(3)
+//         ^
+```
+
+---
+
+# HList summary
+
+The type safety of tuples with the composability of lists.
+
+- heterogeneous entry types (statically known at compile time)
+- composable (via prepend, etc)
+- known static size at compile time
+--
+
+  - good, but limits ability to use for dynamically-sized data
+  - doobie database result set: a `Stream` of `HList`s
+    - `HList`: good fit for a row, but not for a result iterator
+
+---
+
+# Nat
+
+type-level natural numbers
+
+```scala
+val four = Nat(4)
+// four: shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]] = Succ()
+
+val five = Nat(5)
+// five: shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]] = Succ()
+
+val six = Nat(6)
+// six: shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]] = Succ()
+```
+
+---
+
+# Nat
+
+```scala
+val gcdSixFive = GCD[six.N, five.N]
+// gcdSixFive: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]]{type Out = shapeless.Succ[shapeless._0]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@45361300
+
+Nat.toInt[gcdSixFive.Out]
+// res33: Int = 1
+
+val gcdSixFour = GCD[six.N, four.N]
+// gcdSixFour: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]{type Out = shapeless.Succ[shapeless.Succ[shapeless._0]]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@23fb2062
+
+Nat.toInt[gcdSixFour.Out]
+// res34: Int = 2
+```
+
+ </textarea>
+    <!-- use a local copy of remark so we aren't dependent on an internet connection -->
+    <script src="./remark-0.14.0.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create({
+        navigation: {
+          scroll: false
+        },
+        ratio: '16:9',
+        countIncrementalSlides: false
+      });
+    </script>
+  </body>
+</html>

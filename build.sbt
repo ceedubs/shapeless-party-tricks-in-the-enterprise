@@ -23,4 +23,4 @@ enablePlugins(TutPlugin)
 
 tutSourceDirectory := baseDirectory.value / "tut"
 
-tutTargetDirectory := baseDirectory.value / "tut-out"
+tutTargetDirectory := baseDirectory.value / "docs"
