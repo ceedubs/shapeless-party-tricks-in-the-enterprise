@@ -77,8 +77,12 @@ Cody Allen
 - scala developer ~6 years
 - OSS contributor (mostly with [Cats](https://typelevel.org/cats/))
 - pair programmer (mostly with cats)
-- machine learning and NLP at Salesforce
+- machine learning and natural language processing at Salesforce
 - I didn't understand Shapeless the first time that I looked at it.
+
+???
+
+I think that it's worth calling out that I didn't understand Shapeless the first time that I looked at it. It's a pretty abstract library, and I thought that it seemed like it was probably doing cool things, but I didn't have a good feel for how I would actually use it. It wasn't until about a year later when I had a good concrete use-case for Shapeless that it started to click for me. So if you have looked at Shapeless and had a hard time wrapping your head around it, don't worry about it.
 
 ---
 
@@ -93,10 +97,6 @@ From the README:
 <br />
 
 A little abstract? That's okay we'll look at some examples.
-
-???
-
-Shapeless is pretty abstract. It's not like an HTTP library that has a specific use-case. Part of the reason that I didn't understand Shapeless when I first looked at it is because I didn't have a use-case. Once I had a problem that was solved well with Shapeless, things started to click.
 
 ---
 
@@ -246,7 +246,7 @@ val awaitMsg: IO[String] =
 
 ```scala
 awaitMsg.unsafeRunSync
-// res9: String = 1541194238020
+// res9: String = 1541203060660
 ```
 
 ---
@@ -260,17 +260,10 @@ val await2 = for {
   msg1 <- awaitMsg
   msg2 <- awaitMsg
 } yield (msg1, msg2)
-// await2: cats.effect.IO[(String, String)] = IO$1214122573
+// await2: cats.effect.IO[(String, String)] = IO$242977557
 
 await2.unsafeRunSync
-// res10: (String, String) = (1541194238239,1541194238241)
-```
-
---
-
-```scala
-val await2 = awaitMsg.product(awaitMsg)
-// await2: cats.effect.IO[(String, String)] = IO$2063309955
+// res10: (String, String) = (1541203060870,1541203060872)
 ```
 
 ---
@@ -285,10 +278,10 @@ val await3 = for {
   msg2 <- awaitMsg
   msg3 <- awaitMsg
 } yield (msg1, msg2, msg3)
-// await3: cats.effect.IO[(String, String, String)] = IO$1081896693
+// await3: cats.effect.IO[(String, String, String)] = IO$174948393
 
 await3.unsafeRunSync
-// res11: (String, String, String) = (1541194238580,1541194238582,1541194238584)
+// res11: (String, String, String) = (1541203061071,1541203061073,1541203061075)
 ```
 
 ---
@@ -297,10 +290,10 @@ await3.unsafeRunSync
 
 ```scala
 val await3 = awaitMsg product awaitMsg product awaitMsg
-// await3: cats.effect.IO[((String, String), String)] = IO$1989192261
+// await3: cats.effect.IO[((String, String), String)] = IO$1624701761
 
 await3.unsafeRunSync
-// res12: ((String, String), String) = ((1541194238799,1541194238800),1541194238801)
+// res12: ((String, String), String) = ((1541203061370,1541203061371),1541203061372)
 ```
 
 --
@@ -310,7 +303,7 @@ val await3 = (awaitMsg, awaitMsg, awaitMsg).tupled
 // await3: cats.effect.IO[(String, String, String)] = <function1>
 
 await3.unsafeRunSync
-// res13: (String, String, String) = (1541194239015,1541194239017,1541194239018)
+// res13: (String, String, String) = (1541203061602,1541203061603,1541203061605)
 ```
 
 --
@@ -336,13 +329,13 @@ val await2 = awaitMsg.replicateA(2)
 // await2: cats.effect.IO[List[String]] = <function1>
 
 await2.unsafeRunSync
-// res14: List[String] = List(1541194239248, 1541194239249)
+// res14: List[String] = List(1541203061845, 1541203061846)
 
 val await3 = awaitMsg.replicateA(3)
 // await3: cats.effect.IO[List[String]] = <function1>
 
 await3.unsafeRunSync
-// res15: List[String] = List(1541194239464, 1541194239465, 1541194239466)
+// res15: List[String] = List(1541203062066, 1541203062067, 1541203062069)
 ```
 
 ???
@@ -366,13 +359,13 @@ val await2 = awaitMsg.replicateH(2).map(_.tupled)
 // await2: cats.effect.IO[(String, String)] = <function1>
 
 await2.unsafeRunSync
-// res16: (String, String) = (1541194239823,1541194239824)
+// res16: (String, String) = (1541203062503,1541203062505)
 
 val await3 = awaitMsg.replicateH(3).map(_.tupled)
 // await3: cats.effect.IO[(String, String, String)] = <function1>
 
 await3.unsafeRunSync
-// res17: (String, String, String) = (1541194240095,1541194240096,1541194240098)
+// res17: (String, String, String) = (1541203062816,1541203062817,1541203062819)
 ```
 
 ---
@@ -808,13 +801,13 @@ val six = Nat(6)
 
 ```scala
 val gcdSixFive = GCD[six.N, five.N]
-// gcdSixFive: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]]{type Out = shapeless.Succ[shapeless._0]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@45361300
+// gcdSixFive: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]]{type Out = shapeless.Succ[shapeless._0]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@364d8bf5
 
 Nat.toInt[gcdSixFive.Out]
 // res33: Int = 1
 
 val gcdSixFour = GCD[six.N, four.N]
-// gcdSixFour: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]{type Out = shapeless.Succ[shapeless.Succ[shapeless._0]]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@23fb2062
+// gcdSixFour: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]{type Out = shapeless.Succ[shapeless.Succ[shapeless._0]]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@69e65612
 
 Nat.toInt[gcdSixFour.Out]
 // res34: Int = 2

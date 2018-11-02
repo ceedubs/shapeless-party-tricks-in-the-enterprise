@@ -77,8 +77,12 @@ Cody Allen
 - scala developer ~6 years
 - OSS contributor (mostly with [Cats](https://typelevel.org/cats/))
 - pair programmer (mostly with cats)
-- machine learning and NLP at Salesforce
+- machine learning and natural language processing at Salesforce
 - I didn't understand Shapeless the first time that I looked at it.
+
+???
+
+I think that it's worth calling out that I didn't understand Shapeless the first time that I looked at it. It's a pretty abstract library, and I thought that it seemed like it was probably doing cool things, but I didn't have a good feel for how I would actually use it. It wasn't until about a year later when I had a good concrete use-case for Shapeless that it started to click for me. So if you have looked at Shapeless and had a hard time wrapping your head around it, don't worry about it.
 
 ---
 
@@ -93,10 +97,6 @@ From the README:
 <br />
 
 A little abstract? That's okay we'll look at some examples.
-
-???
-
-Shapeless is pretty abstract. It's not like an HTTP library that has a specific use-case. Part of the reason that I didn't understand Shapeless when I first looked at it is because I didn't have a use-case. Once I had a problem that was solved well with Shapeless, things started to click.
 
 ---
 
@@ -251,12 +251,6 @@ val await2 = for {
 } yield (msg1, msg2)
 
 await2.unsafeRunSync
-```
-
---
-
-```tut:book
-val await2 = awaitMsg.product(awaitMsg)
 ```
 
 ---
