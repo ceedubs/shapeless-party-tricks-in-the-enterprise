@@ -52,19 +52,19 @@ name: agenda
 
 # the agenda
 
-1. _Brief_ intro to Shapeless
+1. _Brief_ intro to shapeless
 2. Dive into examples
   - list combinations
   - repeating-effects
   - values of enum-like ADT
 
-_Not_ an in-depth explanation of Shapeless. See [resources](#resources).
+_Not_ an in-depth explanation of shapeless. See [resources](#resources).
 
 ???
 
-Poll the audience on whether they are familiar with Shapeless.
+Poll the audience on whether they are familiar with shapeless.
 
-There have been a number of great in-depth explanations of Shapeless. Today I am going to take a different approach and show a few cool things that it can do, and maybe it will pique your curiosity or prompt you to consider Shapeless for uses that you wouldn't have.
+There have been a number of great in-depth explanations of shapeless. Today I am going to take a different approach and show a few cool things that it can do, and maybe it will pique your curiosity or prompt you to consider shapeless for uses that you wouldn't have.
 
 ---
 
@@ -78,15 +78,15 @@ Cody Allen
 - OSS contributor (mostly with [Cats](https://typelevel.org/cats/))
 - pair programmer (mostly with cats)
 - machine learning and natural language processing at Salesforce
-- I didn't understand Shapeless the first time that I looked at it.
+- I didn't understand shapeless the first time that I looked at it.
 
 ???
 
-I think that it's worth calling out that I didn't understand Shapeless the first time that I looked at it. It's a pretty abstract library, and I thought that it seemed like it was probably doing cool things, but I didn't have a good feel for how I would actually use it. It wasn't until about a year later when I had a good concrete use-case for Shapeless that it started to click for me. So if you have looked at Shapeless and had a hard time wrapping your head around it, don't worry about it.
+I think that it's worth calling out that I didn't understand shapeless the first time that I looked at it. It's a pretty abstract library, and I thought that it seemed like it was probably doing cool things, but I didn't have a good feel for how I would actually use it. It wasn't until about a year later when I had a good concrete use-case for shapeless that it started to click for me. So if you have looked at shapeless and had a hard time wrapping your head around it, don't worry about it.
 
 ---
 
-# Shapeless
+# shapeless
 
 From the README:
 
@@ -102,7 +102,7 @@ A little abstract? That's okay we'll look at some examples.
 
 # shapeless
 
-Libraries using Shapeless:
+Libraries using shapeless:
 
 - [doobie](https://github.com/tpolecat/doobie) - JDBC
 - [scodec](https://github.com/scodec/scodec) - binary data
@@ -114,9 +114,9 @@ Libraries using Shapeless:
 
 ???
 
-These libraries use Shapeless for its powerful abstractions to work with types that are known by the library author at compile time (but not to Shapeless).
+These libraries use shapeless for its powerful abstractions to work with types that are known by the library author at compile time (but not to shapeless).
 
-When people tell me that they haven't been able to wrap their head around Shapeless, I often say something like "it tends to be more useful for library developers than application developers." While I think that this is generally true, in this presentation I want to talk about some one-off use cases where I reached for it.
+When people tell me that they haven't been able to wrap their head around shapeless, I often say something like "it tends to be more useful for library developers than application developers." While I think that this is generally true, in this presentation I want to talk about some one-off use cases where I reached for it.
 
 ---
 
@@ -199,7 +199,7 @@ def combos[F[T] <: GenTraversable[T], A, N <: Nat, Out](n: Nat, l: F[A])(implici
   l.combinations(toInt()).map(toHList(_).getOrElse(sys.error("This shouldn't happen...")))
 ```
 
-Note: this definition will be [slightly cleaner](https://github.com/milessabin/shapeless/pull/816) after the next Shapeless release.
+Note: this definition will be [slightly cleaner](https://github.com/milessabin/shapeless/pull/816) after the next shapeless release.
 
 ???
 
@@ -424,11 +424,11 @@ pReplicate.parseOnly("abc")
 
 # take-away lessons
 
-When compile-time type information is being thrown away, ask yourself whether it has to be.
+Trying to wrap your head around shapeless without a concrete use-case may be tough.
 
 --
 
-Shapeless can often help preserve compile-time type information and type-safety.
+If you find yourself throwing away information that's known at compile-time, you may have a use-case for shapeless.
 
 --
 
@@ -442,9 +442,9 @@ class: center, middle
 
 Special thanks to:
 
-Miles Sabin (@milessabin) for creating Shapeless.
+Miles Sabin (@milessabin) for creating shapeless.
 
-Travis Brown (@travisbrown) for giving great answers to lots of Shapeless questions on Stack Overflow.
+Travis Brown (@travisbrown) for giving great answers to lots of shapeless questions on Stack Overflow.
 
 Rob Norris (@tpolecat) for creating [tut](https://github.com/tpolecat/tut) and giving me permission to copy/paste his slide setup from [Fun and Games with Fix, Cofree, and Doobie](https://github.com/tpolecat/cofree).
 
@@ -519,7 +519,7 @@ Cats uses an ADT for [Comparison](https://github.com/typelevel/cats/blob/v1.4.0/
 
 # enums
 
-Shapeless-powered support getting the values of an ADT "enum":
+shapeless-powered support getting the values of an ADT "enum":
 
 ```tut:silent
 object derivation {

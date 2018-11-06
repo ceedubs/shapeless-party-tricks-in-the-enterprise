@@ -52,19 +52,19 @@ name: agenda
 
 # the agenda
 
-1. _Brief_ intro to Shapeless
+1. _Brief_ intro to shapeless
 2. Dive into examples
   - list combinations
   - repeating-effects
   - values of enum-like ADT
 
-_Not_ an in-depth explanation of Shapeless. See [resources](#resources).
+_Not_ an in-depth explanation of shapeless. See [resources](#resources).
 
 ???
 
-Poll the audience on whether they are familiar with Shapeless.
+Poll the audience on whether they are familiar with shapeless.
 
-There have been a number of great in-depth explanations of Shapeless. Today I am going to take a different approach and show a few cool things that it can do, and maybe it will pique your curiosity or prompt you to consider Shapeless for uses that you wouldn't have.
+There have been a number of great in-depth explanations of shapeless. Today I am going to take a different approach and show a few cool things that it can do, and maybe it will pique your curiosity or prompt you to consider shapeless for uses that you wouldn't have.
 
 ---
 
@@ -78,15 +78,15 @@ Cody Allen
 - OSS contributor (mostly with [Cats](https://typelevel.org/cats/))
 - pair programmer (mostly with cats)
 - machine learning and natural language processing at Salesforce
-- I didn't understand Shapeless the first time that I looked at it.
+- I didn't understand shapeless the first time that I looked at it.
 
 ???
 
-I think that it's worth calling out that I didn't understand Shapeless the first time that I looked at it. It's a pretty abstract library, and I thought that it seemed like it was probably doing cool things, but I didn't have a good feel for how I would actually use it. It wasn't until about a year later when I had a good concrete use-case for Shapeless that it started to click for me. So if you have looked at Shapeless and had a hard time wrapping your head around it, don't worry about it.
+I think that it's worth calling out that I didn't understand shapeless the first time that I looked at it. It's a pretty abstract library, and I thought that it seemed like it was probably doing cool things, but I didn't have a good feel for how I would actually use it. It wasn't until about a year later when I had a good concrete use-case for shapeless that it started to click for me. So if you have looked at shapeless and had a hard time wrapping your head around it, don't worry about it.
 
 ---
 
-# Shapeless
+# shapeless
 
 From the README:
 
@@ -102,7 +102,7 @@ A little abstract? That's okay we'll look at some examples.
 
 # shapeless
 
-Libraries using Shapeless:
+Libraries using shapeless:
 
 - [doobie](https://github.com/tpolecat/doobie) - JDBC
 - [scodec](https://github.com/scodec/scodec) - binary data
@@ -114,9 +114,9 @@ Libraries using Shapeless:
 
 ???
 
-These libraries use Shapeless for its powerful abstractions to work with types that are known by the library author at compile time (but not to Shapeless).
+These libraries use shapeless for its powerful abstractions to work with types that are known by the library author at compile time (but not to shapeless).
 
-When people tell me that they haven't been able to wrap their head around Shapeless, I often say something like "it tends to be more useful for library developers than application developers." While I think that this is generally true, in this presentation I want to talk about some one-off use cases where I reached for it.
+When people tell me that they haven't been able to wrap their head around shapeless, I often say something like "it tends to be more useful for library developers than application developers." While I think that this is generally true, in this presentation I want to talk about some one-off use cases where I reached for it.
 
 ---
 
@@ -204,7 +204,7 @@ def combos[F[T] <: GenTraversable[T], A, N <: Nat, Out](n: Nat, l: F[A])(implici
   l.combinations(toInt()).map(toHList(_).getOrElse(sys.error("This shouldn't happen...")))
 ```
 
-Note: this definition will be [slightly cleaner](https://github.com/milessabin/shapeless/pull/816) after the next Shapeless release.
+Note: this definition will be [slightly cleaner](https://github.com/milessabin/shapeless/pull/816) after the next shapeless release.
 
 ???
 
@@ -246,7 +246,7 @@ val awaitMsg: IO[String] =
 
 ```scala
 awaitMsg.unsafeRunSync
-// res9: String = 1541203060660
+// res9: String = 1541538915818
 ```
 
 ---
@@ -260,10 +260,10 @@ val await2 = for {
   msg1 <- awaitMsg
   msg2 <- awaitMsg
 } yield (msg1, msg2)
-// await2: cats.effect.IO[(String, String)] = IO$242977557
+// await2: cats.effect.IO[(String, String)] = IO$408303173
 
 await2.unsafeRunSync
-// res10: (String, String) = (1541203060870,1541203060872)
+// res10: (String, String) = (1541538916010,1541538916012)
 ```
 
 ---
@@ -278,10 +278,10 @@ val await3 = for {
   msg2 <- awaitMsg
   msg3 <- awaitMsg
 } yield (msg1, msg2, msg3)
-// await3: cats.effect.IO[(String, String, String)] = IO$174948393
+// await3: cats.effect.IO[(String, String, String)] = IO$1365254974
 
 await3.unsafeRunSync
-// res11: (String, String, String) = (1541203061071,1541203061073,1541203061075)
+// res11: (String, String, String) = (1541538916200,1541538916201,1541538916203)
 ```
 
 ---
@@ -290,10 +290,10 @@ await3.unsafeRunSync
 
 ```scala
 val await3 = awaitMsg product awaitMsg product awaitMsg
-// await3: cats.effect.IO[((String, String), String)] = IO$1624701761
+// await3: cats.effect.IO[((String, String), String)] = IO$2023576419
 
 await3.unsafeRunSync
-// res12: ((String, String), String) = ((1541203061370,1541203061371),1541203061372)
+// res12: ((String, String), String) = ((1541538916469,1541538916470),1541538916471)
 ```
 
 --
@@ -303,7 +303,7 @@ val await3 = (awaitMsg, awaitMsg, awaitMsg).tupled
 // await3: cats.effect.IO[(String, String, String)] = <function1>
 
 await3.unsafeRunSync
-// res13: (String, String, String) = (1541203061602,1541203061603,1541203061605)
+// res13: (String, String, String) = (1541538916683,1541538916684,1541538916686)
 ```
 
 --
@@ -329,13 +329,13 @@ val await2 = awaitMsg.replicateA(2)
 // await2: cats.effect.IO[List[String]] = <function1>
 
 await2.unsafeRunSync
-// res14: List[String] = List(1541203061845, 1541203061846)
+// res14: List[String] = List(1541538916899, 1541538916901)
 
 val await3 = awaitMsg.replicateA(3)
 // await3: cats.effect.IO[List[String]] = <function1>
 
 await3.unsafeRunSync
-// res15: List[String] = List(1541203062066, 1541203062067, 1541203062069)
+// res15: List[String] = List(1541538917083, 1541538917085, 1541538917086)
 ```
 
 ???
@@ -359,13 +359,13 @@ val await2 = awaitMsg.replicateH(2).map(_.tupled)
 // await2: cats.effect.IO[(String, String)] = <function1>
 
 await2.unsafeRunSync
-// res16: (String, String) = (1541203062503,1541203062505)
+// res16: (String, String) = (1541538917521,1541538917523)
 
 val await3 = awaitMsg.replicateH(3).map(_.tupled)
 // await3: cats.effect.IO[(String, String, String)] = <function1>
 
 await3.unsafeRunSync
-// res17: (String, String, String) = (1541203062816,1541203062817,1541203062819)
+// res17: (String, String, String) = (1541538917886,1541538917887,1541538917888)
 ```
 
 ---
@@ -480,11 +480,11 @@ pReplicate.parseOnly("abc")
 
 # take-away lessons
 
-When compile-time type information is being thrown away, ask yourself whether it has to be.
+Trying to wrap your head around shapeless without a concrete use-case may be tough.
 
 --
 
-Shapeless can often help preserve compile-time type information and type-safety.
+If you find yourself throwing away information that's known at compile-time, you may have a use-case for shapeless.
 
 --
 
@@ -498,9 +498,9 @@ class: center, middle
 
 Special thanks to:
 
-Miles Sabin (@milessabin) for creating Shapeless.
+Miles Sabin (@milessabin) for creating shapeless.
 
-Travis Brown (@travisbrown) for giving great answers to lots of Shapeless questions on Stack Overflow.
+Travis Brown (@travisbrown) for giving great answers to lots of shapeless questions on Stack Overflow.
 
 Rob Norris (@tpolecat) for creating [tut](https://github.com/tpolecat/tut) and giving me permission to copy/paste his slide setup from [Fun and Games with Fix, Cofree, and Doobie](https://github.com/tpolecat/cofree).
 
@@ -580,7 +580,7 @@ Cats uses an ADT for [Comparison](https://github.com/typelevel/cats/blob/v1.4.0/
 
 # enums
 
-Shapeless-powered support getting the values of an ADT "enum":
+shapeless-powered support getting the values of an ADT "enum":
 
 ```scala
 object derivation {
@@ -801,13 +801,13 @@ val six = Nat(6)
 
 ```scala
 val gcdSixFive = GCD[six.N, five.N]
-// gcdSixFive: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]]{type Out = shapeless.Succ[shapeless._0]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@364d8bf5
+// gcdSixFive: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]]{type Out = shapeless.Succ[shapeless._0]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@5cc817dc
 
 Nat.toInt[gcdSixFive.Out]
 // res33: Int = 1
 
 val gcdSixFour = GCD[six.N, four.N]
-// gcdSixFour: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]{type Out = shapeless.Succ[shapeless.Succ[shapeless._0]]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@69e65612
+// gcdSixFour: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]{type Out = shapeless.Succ[shapeless.Succ[shapeless._0]]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@7b4f680
 
 Nat.toInt[gcdSixFour.Out]
 // res34: Int = 2
