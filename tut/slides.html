@@ -45,6 +45,9 @@ class: center, middle
 # Shapeless party tricks in the enterprise
 Cody Allen
 
+
+[github.com/ceedubs/shapeless-party-tricks-in-the-enterprise](https://github.com/ceedubs/shapeless-party-tricks-in-the-enterprise)
+
 .footer[[Shapeless logo](https://twitter.com/milessabin/status/733992141245042689) by [killnicole](https://twitter.com/killnicole) used with [permission](https://gitter.im/milessabin/shapeless?at=5bdafbe9076992347a9bc11b) / faded from original]
 ---
 
@@ -56,7 +59,7 @@ name: agenda
 2. Dive into examples
   - list combinations
   - repeating-effects
-  - values of enum-like ADT
+  - ~~values of enum-like ADT~~ (oops 20 minute talk...)
 
 _Not_ an in-depth explanation of shapeless. See [resources](#resources).
 
@@ -120,13 +123,33 @@ When people tell me that they haven't been able to wrap their head around shapel
 
 ---
 
-# pairs of list elements
+# labeling emails
 
-```tut:silent
-val names = List("a", "b", "c", "d")
-```
+_What's your availability on Wednesday afternoon?_
+
+Is the sender of this email trying to schedule a meeting?
 
 --
+
+- judge a: yes
+- judge b: yes
+- judge c: no
+- judge d: yes
+
+--
+
+Pairwise agreement:
+
+- (a, b): 74%
+- (a, c): 52%
+- (a, d): 87%
+- (b, c): 61%
+- (b, d): 78%
+- (c, d): 63%
+
+---
+
+# pairs of list elements
 
 ```tut:silent
 def pairs[A](l: List[A]): List[(A, A)] = for {
@@ -134,6 +157,8 @@ def pairs[A](l: List[A]): List[(A, A)] = for {
   (a2, id2) <- l.zipWithIndex
   if id1 < id2
 } yield (a1, a2)
+
+val names = List("a", "b", "c", "d")
 ```
 
 ```tut:book
@@ -163,6 +188,10 @@ Works with an arbitrary value of `n` instead of just `2`.
 --
 
 But, it gives us a `List` of `List`s, throwing away information about what `n` was.
+
+--
+
+Can we do better?
 
 ---
 
@@ -278,8 +307,6 @@ val await3 = awaitMsg product awaitMsg product awaitMsg
 await3.unsafeRunSync
 ```
 
---
-
 ```tut:book
 val await3 = (awaitMsg, awaitMsg, awaitMsg).tupled
 await3.unsafeRunSync
@@ -347,8 +374,6 @@ val replicated3 = List(1, 2).replicateH(3).map(_.tupled)
 replicated3.mkString("\n")
 ```
 
---
-
 Similar to `combos` but pairs an element with itself too
 
 ---
@@ -412,13 +437,19 @@ pSquiggly.parseOnly("abc")
 
 ---
 
-# replicateA on a parser
+# replicateH on a parser
 
 ```tut:book
 val pReplicate = letter.replicateH(3).map(_.tupled)
 
 pReplicate.parseOnly("abc")
 ```
+
+---
+
+# replicateH implementation
+
+[replicateH](https://github.com/typelevel/kittens/blob/master/core/src/main/scala/cats/replicateH/replicateH.scala) from [kittens][kittens]
 
 ---
 
@@ -452,7 +483,7 @@ Rob Norris (@tpolecat) for creating [tut](https://github.com/tpolecat/tut) and g
 
 # resources
 
-- [this presentation](https://github.com/ceedubs/shapeless-party-tricks-in-the-enterprise)
+- this presentation: [github.com/ceedubs/shapeless-party-tricks-in-the-enterprise](https://github.com/ceedubs/shapeless-party-tricks-in-the-enterprise)
 - [shapeless](https://github.com/milessabin/shapeless)
 - [The Type Astronaut's Guide to Shapeless Book](https://underscore.io/books/shapeless-guide/)
 - [kittens][kittens] - Automatic type class derivation for Cats

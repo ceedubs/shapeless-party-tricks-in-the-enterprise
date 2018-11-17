@@ -45,6 +45,9 @@ class: center, middle
 # Shapeless party tricks in the enterprise
 Cody Allen
 
+
+[github.com/ceedubs/shapeless-party-tricks-in-the-enterprise](https://github.com/ceedubs/shapeless-party-tricks-in-the-enterprise)
+
 .footer[[Shapeless logo](https://twitter.com/milessabin/status/733992141245042689) by [killnicole](https://twitter.com/killnicole) used with [permission](https://gitter.im/milessabin/shapeless?at=5bdafbe9076992347a9bc11b) / faded from original]
 ---
 
@@ -56,7 +59,7 @@ name: agenda
 2. Dive into examples
   - list combinations
   - repeating-effects
-  - values of enum-like ADT
+  - ~~values of enum-like ADT~~ (oops 20 minute talk...)
 
 _Not_ an in-depth explanation of shapeless. See [resources](#resources).
 
@@ -120,13 +123,33 @@ When people tell me that they haven't been able to wrap their head around shapel
 
 ---
 
-# pairs of list elements
+# labeling emails
 
-```scala
-val names = List("a", "b", "c", "d")
-```
+_What's your availability on Wednesday afternoon?_
+
+Is the sender of this email trying to schedule a meeting?
 
 --
+
+- judge a: yes
+- judge b: yes
+- judge c: no
+- judge d: yes
+
+--
+
+Pairwise agreement:
+
+- (a, b): 74%
+- (a, c): 52%
+- (a, d): 87%
+- (b, c): 61%
+- (b, d): 78%
+- (c, d): 63%
+
+---
+
+# pairs of list elements
 
 ```scala
 def pairs[A](l: List[A]): List[(A, A)] = for {
@@ -134,6 +157,8 @@ def pairs[A](l: List[A]): List[(A, A)] = for {
   (a2, id2) <- l.zipWithIndex
   if id1 < id2
 } yield (a1, a2)
+
+val names = List("a", "b", "c", "d")
 ```
 
 ```scala
@@ -166,6 +191,10 @@ Works with an arbitrary value of `n` instead of just `2`.
 --
 
 But, it gives us a `List` of `List`s, throwing away information about what `n` was.
+
+--
+
+Can we do better?
 
 ---
 
@@ -246,7 +275,7 @@ val awaitMsg: IO[String] =
 
 ```scala
 awaitMsg.unsafeRunSync
-// res9: String = 1541538915818
+// res9: String = 1542470211188
 ```
 
 ---
@@ -260,10 +289,10 @@ val await2 = for {
   msg1 <- awaitMsg
   msg2 <- awaitMsg
 } yield (msg1, msg2)
-// await2: cats.effect.IO[(String, String)] = IO$408303173
+// await2: cats.effect.IO[(String, String)] = IO$693692129
 
 await2.unsafeRunSync
-// res10: (String, String) = (1541538916010,1541538916012)
+// res10: (String, String) = (1542470211706,1542470211708)
 ```
 
 ---
@@ -278,10 +307,10 @@ val await3 = for {
   msg2 <- awaitMsg
   msg3 <- awaitMsg
 } yield (msg1, msg2, msg3)
-// await3: cats.effect.IO[(String, String, String)] = IO$1365254974
+// await3: cats.effect.IO[(String, String, String)] = IO$61244383
 
 await3.unsafeRunSync
-// res11: (String, String, String) = (1541538916200,1541538916201,1541538916203)
+// res11: (String, String, String) = (1542470212089,1542470212091,1542470212093)
 ```
 
 ---
@@ -290,20 +319,18 @@ await3.unsafeRunSync
 
 ```scala
 val await3 = awaitMsg product awaitMsg product awaitMsg
-// await3: cats.effect.IO[((String, String), String)] = IO$2023576419
+// await3: cats.effect.IO[((String, String), String)] = IO$843348225
 
 await3.unsafeRunSync
-// res12: ((String, String), String) = ((1541538916469,1541538916470),1541538916471)
+// res12: ((String, String), String) = ((1542470212544,1542470212545),1542470212547)
 ```
-
---
 
 ```scala
 val await3 = (awaitMsg, awaitMsg, awaitMsg).tupled
 // await3: cats.effect.IO[(String, String, String)] = <function1>
 
 await3.unsafeRunSync
-// res13: (String, String, String) = (1541538916683,1541538916684,1541538916686)
+// res13: (String, String, String) = (1542470213008,1542470213009,1542470213011)
 ```
 
 --
@@ -329,13 +356,13 @@ val await2 = awaitMsg.replicateA(2)
 // await2: cats.effect.IO[List[String]] = <function1>
 
 await2.unsafeRunSync
-// res14: List[String] = List(1541538916899, 1541538916901)
+// res14: List[String] = List(1542470213694, 1542470213696)
 
 val await3 = awaitMsg.replicateA(3)
 // await3: cats.effect.IO[List[String]] = <function1>
 
 await3.unsafeRunSync
-// res15: List[String] = List(1541538917083, 1541538917085, 1541538917086)
+// res15: List[String] = List(1542470214147, 1542470214148, 1542470214150)
 ```
 
 ???
@@ -359,13 +386,13 @@ val await2 = awaitMsg.replicateH(2).map(_.tupled)
 // await2: cats.effect.IO[(String, String)] = <function1>
 
 await2.unsafeRunSync
-// res16: (String, String) = (1541538917521,1541538917523)
+// res16: (String, String) = (1542470215332,1542470215333)
 
 val await3 = awaitMsg.replicateH(3).map(_.tupled)
 // await3: cats.effect.IO[(String, String, String)] = <function1>
 
 await3.unsafeRunSync
-// res17: (String, String, String) = (1541538917886,1541538917887,1541538917888)
+// res17: (String, String, String) = (1542470215690,1542470215691,1542470215693)
 ```
 
 ---
@@ -390,8 +417,6 @@ replicated3.mkString("\n")
 // (2,2,1)
 // (2,2,2)
 ```
-
---
 
 Similar to `combos` but pairs an element with itself too
 
@@ -466,7 +491,7 @@ pSquiggly.parseOnly("abc")
 
 ---
 
-# replicateA on a parser
+# replicateH on a parser
 
 ```scala
 val pReplicate = letter.replicateH(3).map(_.tupled)
@@ -475,6 +500,12 @@ val pReplicate = letter.replicateH(3).map(_.tupled)
 pReplicate.parseOnly("abc")
 // res25: atto.ParseResult[(Char, Char, Char)] = Done(,(a,b,c))
 ```
+
+---
+
+# replicateH implementation
+
+[replicateH](https://github.com/typelevel/kittens/blob/master/core/src/main/scala/cats/replicateH/replicateH.scala) from [kittens][kittens]
 
 ---
 
@@ -508,7 +539,7 @@ Rob Norris (@tpolecat) for creating [tut](https://github.com/tpolecat/tut) and g
 
 # resources
 
-- [this presentation](https://github.com/ceedubs/shapeless-party-tricks-in-the-enterprise)
+- this presentation: [github.com/ceedubs/shapeless-party-tricks-in-the-enterprise](https://github.com/ceedubs/shapeless-party-tricks-in-the-enterprise)
 - [shapeless](https://github.com/milessabin/shapeless)
 - [The Type Astronaut's Guide to Shapeless Book](https://underscore.io/books/shapeless-guide/)
 - [kittens][kittens] - Automatic type class derivation for Cats
@@ -801,13 +832,13 @@ val six = Nat(6)
 
 ```scala
 val gcdSixFive = GCD[six.N, five.N]
-// gcdSixFive: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]]{type Out = shapeless.Succ[shapeless._0]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@5cc817dc
+// gcdSixFive: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]]{type Out = shapeless.Succ[shapeless._0]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@5e640765
 
 Nat.toInt[gcdSixFive.Out]
 // res33: Int = 1
 
 val gcdSixFour = GCD[six.N, four.N]
-// gcdSixFour: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]{type Out = shapeless.Succ[shapeless.Succ[shapeless._0]]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@7b4f680
+// gcdSixFour: shapeless.ops.nat.GCD[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]],shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless.Succ[shapeless._0]]]]]{type Out = shapeless.Succ[shapeless.Succ[shapeless._0]]} = shapeless.ops.nat$LowPriorityGCD$$anon$46@657c1245
 
 Nat.toInt[gcdSixFour.Out]
 // res34: Int = 2
